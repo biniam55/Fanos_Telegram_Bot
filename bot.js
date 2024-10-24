@@ -1,13 +1,32 @@
 const TelegramBot = require('node-telegram-bot-api');
+const express = require('express');
+const bodyParser = require('body-parser');
 
 // Replace with your own token
 const token = '7758575412:AAFshIovy1r_NH9wl3HmRkS6F5UtWpmWn5M';
-const bot = new TelegramBot(token, { polling: true });
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Middleware to parse incoming requests
+app.use(bodyParser.json());
+
+// Create the bot with webhook configuration
+const bot = new TelegramBot(token, { webHook: true });
+
+// Set the webhook URL (replace 'YOUR_DOMAIN' with your actual domain or external URL from Render)
+const url = process.env.RENDER_EXTERNAL_URL || 'https://your-domain.com';
+bot.setWebHook(`${url}/bot${token}`);
+
+// Webhook route to handle Telegram messages
+app.post(`/bot${token}`, (req, res) => {
+    bot.processUpdate(req.body);
+    res.sendStatus(200);
+});
 
 // Listen for the /start command
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
-    const username = msg.from.username || 'there'; // Use the username or a fallback if it's not available
+    const username = msg.from.username || 'there'; // Use the username or fallback if it's not available
 
     // Craft the welcome message
     const welcomeMessage = `Hey @${username}! It's FanosCrypto! 🌟 Your gateway to exclusive premium channels for crypto insights and analysis! 📈💼
@@ -18,33 +37,33 @@ Also, check out our main channel for even more exciting updates! Stay informed a
 
 Remember: FanosCrypto is where crypto pros gather, and endless opportunities await! 💰`;
 
-    // Create inline keyboard options with buttons on different rows
+    // Inline keyboard with buttons on different rows
     const options = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: 'Access Premium Channel', url: `https://t.me/fanospremiumbot/FTMA?username=${username}` }], // URL to your mini app
-                [{ text: 'Join Main Channel', url: 'https://t.me/FanosCryptoChannel' }] // URL to your Telegram channel
+                [{ text: 'Access Premium Channel', url: `https://t.me/fanospremiumbot/FTMA?username=${username}` }],
+                [{ text: 'Join Main Channel', url: 'https://t.me/FanosCryptoChannel' }]
             ]
         }
     };
 
-    // Create reply keyboard options with the "Launch Mini App" button in the typing area
+    // Reply keyboard options with the "Launch Mini App" button
     const launchButtonOptions = {
         reply_markup: {
             keyboard: [
-                [{ text: 'Launch Mini App' }] // Reply keyboard button in the typing area
+                [{ text: 'Launch Mini App' }]
             ],
-            resize_keyboard: true, // Resize keyboard to fit the screen
-            one_time_keyboard: true // Hide keyboard after the button is pressed
+            resize_keyboard: true,
+            one_time_keyboard: true
         }
     };
 
-    // Send a message with the crafted text and the inline buttons
+    // Send welcome message with inline buttons and the launch button in the typing area
     bot.sendMessage(chatId, welcomeMessage, options);
     bot.sendMessage(chatId, 'Or use the "Launch Mini App" button below:', launchButtonOptions);
 });
 
-// Listen for the "Launch Mini App" button press in the typing area
+// Handle the "Launch Mini App" button press in the typing area
 bot.onText(/Launch Mini App/, (msg) => {
     const chatId = msg.chat.id;
 
@@ -52,7 +71,7 @@ bot.onText(/Launch Mini App/, (msg) => {
     bot.sendMessage(chatId, 'Click the link below to open the Mini App:', {
         reply_markup: {
             inline_keyboard: [
-                [{ text: 'Access Premium Channel', url: 'https://t.me/fanospremiumbot/FTMA' }] // Inline button with URL to mini app
+                [{ text: 'Access Premium Channel', url: 'https://t.me/fanospremiumbot/FTMA' }]
             ]
         }
     });
@@ -62,16 +81,21 @@ bot.onText(/Launch Mini App/, (msg) => {
 bot.onText(/\/open/, (msg) => {
     const chatId = msg.chat.id;
 
-    // Create inline keyboard options for opening the mini app and joining the channel on different rows
+    // Inline keyboard options for opening the mini app and joining the channel
     const openOptions = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: 'Launch Mini App', url: 'https://t.me/fanospremiumbot/FTMA' }], // URL to your mini app
-                [{ text: 'Join Channel', url: 'https://t.me/FanosCryptoChannel' }] // URL to your Telegram channel
+                [{ text: 'Launch Mini App', url: 'https://t.me/fanospremiumbot/FTMA' }],
+                [{ text: 'Join Channel', url: 'https://t.me/FanosCryptoChannel' }]
             ]
         }
     };
 
-    // Send a message with the inline buttons
+    // Send a message with inline buttons
     bot.sendMessage(chatId, 'You can launch the mini app or join the channel using the buttons below:', openOptions);
+});
+
+// Start the express server
+app.listen(port, () => {
+    console.log(`Telegram bot is listening on port ${port}`);
 });
