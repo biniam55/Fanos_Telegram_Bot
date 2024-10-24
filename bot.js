@@ -14,7 +14,7 @@ app.use(bodyParser.json());
 const bot = new TelegramBot(token, { webHook: true });
 
 // Set the webhook URL (replace 'YOUR_DOMAIN' with your actual domain or external URL from Render)
-const url = process.env.RENDER_EXTERNAL_URL || 'https://your-domain.com';
+const url = process.env.RENDER_EXTERNAL_URL || 'https://fanos-telegram-bot-2.onrender.com';
 bot.setWebHook(`${url}/bot${token}`);
 
 // Webhook route to handle Telegram messages
